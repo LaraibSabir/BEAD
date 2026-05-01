@@ -1,0 +1,7 @@
+﻿node_modules/
+
+android/app/build/
+ios/build/
+.expo/
+bin/
+obj/

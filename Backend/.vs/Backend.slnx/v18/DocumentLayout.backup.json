@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\larai\\Desktop\\Map2025\\BIIT_Teacher_Evolution_System\\Backend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{29642F9E-F610-4958-B877-E0B074AAAF64}|Backend\\Backend.csproj|c:\\users\\larai\\desktop\\map2025\\biit_teacher_evolution_system\\backend\\backend\\controllers\\studentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{29642F9E-F610-4958-B877-E0B074AAAF64}|Backend\\Backend.csproj|solutionrelative:backend\\controllers\\studentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "StudentController.cs",
+              "DocumentMoniker": "C:\\Users\\larai\\Desktop\\Map2025\\BIIT_Teacher_Evolution_System\\Backend\\Backend\\Controllers\\StudentController.cs",
+              "RelativeDocumentMoniker": "Backend\\Controllers\\StudentController.cs",
+              "ToolTip": "C:\\Users\\larai\\Desktop\\Map2025\\BIIT_Teacher_Evolution_System\\Backend\\Backend\\Controllers\\StudentController.cs*",
+              "RelativeToolTip": "Backend\\Controllers\\StudentController.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-06T08:03:53.882Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
