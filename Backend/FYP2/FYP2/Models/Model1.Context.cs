@@ -31,7 +31,6 @@ namespace FYP2.Models
         public virtual DbSet<CRSMTR> CRSMTRs { get; set; }
         public virtual DbSet<Eval> Evals { get; set; }
         public virtual DbSet<Project> Projects { get; set; }
-        public virtual DbSet<Question_Answer> Question_Answer { get; set; }
         public virtual DbSet<SEMMTR> SEMMTRs { get; set; }
         public virtual DbSet<STMTR> STMTRs { get; set; }
         public virtual DbSet<ALLOCATE> ALLOCATEs { get; set; }
@@ -43,5 +42,6 @@ namespace FYP2.Models
         public virtual DbSet<v_TeacherAttendance_EMPMTR> v_TeacherAttendance_EMPMTR { get; set; }
         public virtual DbSet<Accgpa> Accgpas { get; set; }
         public virtual DbSet<PeerEvaluation> PeerEvaluations { get; set; }
+        public virtual DbSet<Question_Answer> Question_Answer { get; set; }
     }
 }

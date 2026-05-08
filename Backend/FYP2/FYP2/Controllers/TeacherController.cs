@@ -244,55 +244,49 @@ namespace FYP2.Controllers
         }
         // 2. Selected teachers ka 'eval' column update karne ke liye
         [HttpPost]
-        [Route("api/Evaluation/SubmitPeer")]
-        public IHttpActionResult SubmitPeerEvaluation(PeerEvaluationRequest request)
+        public HttpResponseMessage SavePeerAssignment(List<string> selectedTeacherIds)
         {
-            // 1. Basic Validation
-            if (request == null || request.Answers == null || !request.Answers.Any())
-            {
-                return BadRequest("Evaluation data or answers are missing.");
-            }
-
             try
             {
-                // 2. Map answers to the PeerEvaluation table
-                foreach (var ans in request.Answers)
+                // 1. Pehle safe check karein ke data null na ho
+                if (selectedTeacherIds == null)
                 {
-                    var peerEval = new PeerEvaluation
-                    {
-                        Evaluator_Emp_no = request.Evaluator_Emp_no?.Trim(),
-                        Target_Emp_no = request.Target_Emp_no?.Trim(),
-                        Question_Desc = ans.Question_ID, // Mapping ID to the column
-                        Answer_Marks = ans.Rating,
-                        Answer_Desc = GetRatingText(ans.Rating), // Assuming your helper function exists
-                        Remarks = request.Suggestion?.Trim()
-                    };
-
-                    db.PeerEvaluations.Add(peerEval);
+                    selectedTeacherIds = new List<string>();
                 }
 
-                // 3. Save to Database
-                db.SaveChanges();
-                return Ok(new { message = "Peer evaluation submitted successfully!" });
-            }
-            catch (System.Data.Entity.Validation.DbEntityValidationException dbEx)
-            {
-                // Extracts validation errors (e.g., string too long, null constraint violated)
-                var errorMessages = dbEx.EntityValidationErrors
-                    .SelectMany(x => x.ValidationErrors)
-                    .Select(x => $"{x.PropertyName}: {x.ErrorMessage}");
+                // 2. Sab teachers ka eval reset karein (Junior Lecturer ke ilawa)
+                // Trim aur ToLower lazmi use karein taake exact match ho
+                var allEligible = db.EMPMTRs.Where(e =>
+      e.Designation != null &&
+      e.Designation != "Junior Lecturer"
+  ).ToList();
 
-                return BadRequest("Validation Failed: " + string.Join("; ", errorMessages));
+                foreach (var t in allEligible)
+                {
+                    t.Eval = 0;
+                }
+
+                // 3. Current selection ko 1 karein
+                if (selectedTeacherIds.Any())
+                {
+                    var toUpdate = db.EMPMTRs.Where(e => selectedTeacherIds.Contains(e.Emp_no)).ToList();
+                    foreach (var t in toUpdate)
+                    {
+                        t.Eval = 1;
+                    }
+                }
+
+                db.SaveChanges();
+                return Request.CreateResponse(HttpStatusCode.OK, "Success");
             }
             catch (Exception ex)
             {
-                // Returns the full error for debugging (use more generic messages in production)
-                return InternalServerError(ex);
+                // Isse aapko error ki asli wajah pata chal jayegi agar crash hua to
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
             }
         }
         // Check if Peer Already Evaluated
         [HttpGet]
-        [Route("api/Evaluation/CheckPeerStatus")]
         public HttpResponseMessage CheckIfAlreadyEvaluated(string evaluatorId, string targetId)
         {
             try
@@ -314,6 +308,42 @@ namespace FYP2.Controllers
             catch (Exception ex)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error checking evaluation status: " + ex.Message);
+            }
+        }
+        [HttpPost]
+        public HttpResponseMessage SubmitPeer(PeerEvaluationRequest request)
+        {
+            if (request == null || request.Answers == null || !request.Answers.Any())
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Invalid evaluation data.");
+            }
+
+            try
+            {
+                // Iterate through each answer and save to the PeerEvaluation table
+                foreach (var ans in request.Answers)
+                {
+                    PeerEvaluation evaluation = new PeerEvaluation
+                    {
+                        Evaluator_Emp_no = request.Evaluator_Emp_no.Trim(),
+                        Target_Emp_no = request.Target_Emp_no.Trim(),
+                        Question_Desc = ans.Question_ID, // This matches the INT column in your DB
+                        Answer_Marks = ans.Rating,      // This matches the INT column in your DB
+                        Answer_Desc = GetRatingText(ans.Rating), // Converts 5 to "Excellent" etc.
+                        Remarks = request.Suggestion    // This matches the NVARCHAR(MAX) column
+                    };
+
+                    db.PeerEvaluations.Add(evaluation);
+                }
+
+                db.SaveChanges();
+                return Request.CreateResponse(HttpStatusCode.OK, new { message = "Peer evaluation saved successfully!" });
+            }
+            catch (Exception ex)
+            {
+                // Log the internal exception for better debugging
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : "";
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error saving evaluation: " + ex.Message + " " + innerMsg);
             }
         }
 

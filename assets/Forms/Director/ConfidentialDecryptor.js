@@ -9,9 +9,9 @@ import {
     ActivityIndicator, 
     Alert 
 } from "react-native";
-import { pick, types, isCancel } from "@react-native-documents/picker";
+import * as DocumentPicker from "@react-native-documents/picker";
 import axios from "axios";
-import ApiEndPoint from "../unity.js";
+import ApiEndPoint from "../APIEndPoint";
 
 const ConfidentialDecryptor = ({ navigation }) => {
     const [fileName, setFileName] = useState("");
@@ -20,8 +20,9 @@ const ConfidentialDecryptor = ({ navigation }) => {
 
     const handleFileSelect = async () => {
         try {
-            const [res] = await pick({
-                type: [types.allFiles],
+            // Updated to use DocumentPicker.pick
+            const [res] = await DocumentPicker.pick({
+                type: [DocumentPicker.types.allFiles],
                 allowMultiSelection: false,
             });
 
@@ -39,7 +40,7 @@ const ConfidentialDecryptor = ({ navigation }) => {
             formData.append("file", {
                 uri: res.uri,
                 name: res.name,
-                type: "application/octet-stream", // standard for encrypted files
+                type: "application/octet-stream", 
             });
 
             const response = await axios.post(
@@ -48,10 +49,8 @@ const ConfidentialDecryptor = ({ navigation }) => {
                 { headers: { "Content-Type": "multipart/form-data" } }
             );
 
-            // Assuming your API returns { records: [], rawJson: "" }
             setStatus({ type: "success", msg: "Upload successful!" });
             
-            // Navigate to the Table screen with data
             navigation.navigate("ConfidentialDecryptorTable", {
                 records: response.data.records || [],
                 rawJson: JSON.stringify(response.data, null, 2),
@@ -59,8 +58,9 @@ const ConfidentialDecryptor = ({ navigation }) => {
             });
 
         } catch (err) {
-            if (isCancel(err)) {
-                // User cancelled the picker
+            // Consistent reference via the DocumentPicker object to fix the error in image_c1ff1e.jpg
+            if (DocumentPicker.isCancel(err)) { 
+                console.log("User cancelled the picker");
             } else {
                 const apiMessage = err.response?.data?.message || err.message;
                 setStatus({ type: "error", msg: `Process failed: ${apiMessage}` });
@@ -71,10 +71,10 @@ const ConfidentialDecryptor = ({ navigation }) => {
     };
 
     return (
-       <ScrollView 
-  style={styles.container} // This handles the flex: 1
-  contentContainerStyle={styles.scrollContent} // This handles padding/alignment[cite: 2, 3]
->
+        <ScrollView 
+            style={styles.container} 
+            contentContainerStyle={styles.scrollContent}
+        >
             <View style={styles.logoWrap}>
                 <Image source={require("../../Images/Biit_Logo.png")} style={styles.logo} resizeMode="contain" />
             </View>
@@ -117,6 +117,7 @@ const ConfidentialDecryptor = ({ navigation }) => {
 };
 
 export default ConfidentialDecryptor;
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -140,20 +141,14 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         padding: 20,
         marginBottom: 20,
-        elevation: 5, // Android shadow
-        shadowColor: "#000", // iOS shadow
+        elevation: 5,
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
     },
     cardTitle: {
         fontSize: 20,
         fontWeight: "bold",
-        color: "#1a2e28",
-        marginBottom: 10,
-    },
-    subTitle: {
-        fontSize: 16,
-        fontWeight: "700",
         color: "#1a2e28",
         marginBottom: 10,
     },
@@ -185,34 +180,6 @@ const styles = StyleSheet.create({
     statusText: {
         color: "#4caf50",
         marginTop: 10,
-    },
-    // Table Styles
-    tableRow: {
-        flexDirection: "row",
-    },
-    tableCell: {
-        borderWidth: 1,
-        borderColor: "#d4ddda",
-        padding: 8,
-        minWidth: 100,
-    },
-    headerCell: {
-        backgroundColor: "#e6efec",
-    },
-    headerText: {
-        fontWeight: "bold",
-        color: "#1a2e28",
-    },
-    cellText: {
-        fontSize: 12,
-        color: "#333",
-    },
-    rawJsonText: {
-        backgroundColor: "#f7f9f8",
-        padding: 10,
-        borderRadius: 8,
-        fontFamily: "monospace",
-        fontSize: 12,
     },
     footerBtn: {
         position: "absolute",

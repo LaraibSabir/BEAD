@@ -36,7 +36,7 @@ const TeacherPerformanceDashboard = () => {
 
            <Image
                         style={ss.avatar}
-                        source={require("../../../Images/avatar.png")}
+                        source={require("../../../Images/male.png")}
             />
         </View>
       </View>

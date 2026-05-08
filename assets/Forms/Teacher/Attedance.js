@@ -31,14 +31,30 @@ const Attendance = () => {
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const avatarIDs = [
+    "BIIT167", "BIIT189", "BIIT212", "BIIT213", "BIIT346", "BIIT359", 
+    "BIIT365", "BIIT368", "BIIT222", "BIIT202", "BIIT386", "BIIT422", 
+    "BIIT394", "BIIT397", "BIIT395", "BIIT393", "BIIT400", "BIIT402", 
+    "BIIT403", "BIIT404", "BIIT407", "BIIT409", "BIIT411", "BIIT412", 
+    "BIIT416", "BIIT417", "BIIT418", "BIIT421", "BIIT424", "BIIT425", 
+    "BIIT427", "BIIT429"
+  ];
+
+  // Determine the image source based on TeacherID
+  const profileImage = avatarIDs.includes(TeacherID)
+    ? require("../../Images/avatar.png")
+    : require("../../Images/male.png");
+
   useEffect(() => {
     if (TeacherID) {
-      initialDataFetch();
+      // Call the actual function name defined below
+      initialDataFetch(); 
     } else {
       setLoading(false);
-      Alert.alert("Error", "Teacher ID not found.");
+      Alert.alert("Error", "No Teacher ID found. Please login again.");
     }
   }, [TeacherID]);
+  
 
   const initialDataFetch = async () => {
     setLoading(true);
@@ -122,9 +138,10 @@ const Attendance = () => {
           <View style={ss.row}>
             <View style={{ flex: 1 }}>
               <Text style={ss.infoText}>Name: <Text style={ss.bold}>{teacherData?.Name || "N/A"}</Text></Text>
+              <Text style={ss.infoText}>Designation: <Text style={ss.bold}>{teacherData?.Designation || "N/A"}</Text></Text>
               <Text style={ss.infoText}>Range: <Text style={ss.bold}>{dbRange.start} to {dbRange.end}</Text></Text>
             </View>
-            <Image source={require("../../Images/avatar.png")} style={ss.avatar} />
+           <Image source={profileImage} style={ss.avatar} />
           </View>
         </View>
 
@@ -201,7 +218,7 @@ const ss = StyleSheet.create({
   statusBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   statusText: { fontSize: 9, fontWeight: "bold" },
   commentSection: { width: '100%', marginBottom: 20 },
-  textInput: { backgroundColor: '#fff', borderRadius: 8, padding: 12, height: 60, textAlignVertical: 'top' },
+  textInput: { backgroundColor: '#706969', borderRadius: 8, padding: 12, height: 60, textAlignVertical: 'top' ,color:'#0c0c0c',backgroundtext:'#1c1d1d'},
   submitBtn: { backgroundColor: '#218564', marginTop: 10, padding: 12, borderRadius: 8, alignItems: 'center' },
   submitBtnText: { fontWeight: 'bold', color: '#f3fbfb' },
   homeBtn: { backgroundColor: "#FFF", paddingVertical: 12, paddingHorizontal: 40, borderRadius: 20 },

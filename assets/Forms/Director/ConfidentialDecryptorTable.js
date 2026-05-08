@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image,StyleSheet } from "react-native";
 // Assuming shared styles
 
 const ConfidentialDecryptorTable = ({ route, navigation }) => {

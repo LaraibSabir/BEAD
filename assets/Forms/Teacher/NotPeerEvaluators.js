@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { 
-  View, Text, Image, StyleSheet, ScrollView, Alert, ActivityIndicator 
+  View, Text, Image, TouchableOpacity, StyleSheet, 
+  ScrollView, ActivityIndicator, Alert 
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Button } from "react-native-paper";
 import APIEndPoint from "../APIEndPoint";
-
 
 const NotPeerEvaluators = () => {
   const navigation = useNavigation();
@@ -14,8 +13,20 @@ const NotPeerEvaluators = () => {
   const [teacherData, setTeacherData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Getting TeacherID from navigation params
   const { TeacherID } = route.params || {};
+
+  const avatarIDs = [
+    "BIIT167", "BIIT189", "BIIT212", "BIIT213", "BIIT346", "BIIT359", 
+    "BIIT365", "BIIT368", "BIIT222", "BIIT202", "BIIT386", "BIIT422", 
+    "BIIT394", "BIIT397", "BIIT395", "BIIT393", "BIIT400", "BIIT402", 
+    "BIIT403", "BIIT404", "BIIT407", "BIIT409", "BIIT411", "BIIT412", 
+    "BIIT416", "BIIT417", "BIIT418", "BIIT421", "BIIT424", "BIIT425", 
+    "BIIT427", "BIIT429"
+  ];
+
+  const profileImage = avatarIDs.includes(TeacherID)
+    ? require("../../Images/avatar.png")
+    : require("../../Images/male.png");
 
   useEffect(() => {
     if (TeacherID) {
@@ -31,7 +42,6 @@ const NotPeerEvaluators = () => {
     try {
       const response = await fetch(url);
       const data = await response.json();
-
       if (response.ok) {
         setTeacherData(data);
       } else {
@@ -48,171 +58,186 @@ const NotPeerEvaluators = () => {
   const logout = () => {
     Alert.alert("Logout", "Are You Sure You Want to Logout?", [
       { text: "cancel", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: () => {
-          navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-        },
-      },
+      { text: "Yes", onPress: () => navigation.reset({ index: 0, routes: [{ name: "Login" }] }) },
     ]);
   };
 
+  // Helper to render consistent dashboard items
+  const DashboardItem = ({ label, title, buttonText, onPress }) => (
+    <View style={ss.card}>
+      <View style={ss.cardContent}>
+        <Text style={ss.itemLabel}>{label}</Text>
+        <Text style={ss.itemTitle}>{title}</Text>
+      </View>
+      <TouchableOpacity style={ss.actionBtn} onPress={onPress}>
+        <Text style={ss.actionBtnText}>{buttonText}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (loading) {
     return (
-      <View style={[ss.mView, { justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color="#ffffff" />
+      <View style={[ss.main, { justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#28a745" />
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={ss.mView}>
-      <View style={ss.h}>
-        <Image source={require("../../Images/Biit_Logo.png")} style={ss.bimg} />
+    <ScrollView contentContainerStyle={ss.main}>
+      {/* Top Logo Container */}
+      <View style={ss.logoContainer}>
+        <Image style={ss.logo} source={require("../../Images/Biit_Logo.png")} />
       </View>
 
-      <View style={ss.vc}>
-        <View style={{ flex: 1 }}>
-          <Text style={ss.mtxt}>Teacher Information</Text>
-          <Text style={ss.txt}>
-            <Text style={{ fontWeight: 'bold' }}>Name: </Text>
-            {teacherData?.Name || "N/A"}
-          </Text>
-          <Text style={ss.txt}>
-            <Text style={{ fontWeight: 'bold' }}>Designation: </Text>
-            {teacherData?.Designation || "N/A"}
-          </Text>
+      {/* Profile Card */}
+      <View style={ss.profileCard}>
+        <View style={ss.profileInfo}>
+          <Text style={ss.itemLabel}>Teacher Information</Text>
+          <Text style={ss.pText}>Name: <Text style={ss.bold}>{teacherData?.Name || "N/A"}</Text></Text>
+          <Text style={ss.pText}>Designation: <Text style={ss.bold}>{teacherData?.Designation || "N/A"}</Text></Text>
+          <Text style={ss.pSubText}>BIIT Academic Staff</Text>
         </View>
-        <Image source={require("../../Images/avatar.png")} style={ss.avatar} />
+        <Image style={ss.avatar} source={profileImage} />
       </View>
 
-      <Text style={ss.dt}>Faculty Dashboard</Text>
-      
-      <View style={ss.btng}>
-        <Button 
-          mode="contained" 
-          style={ss.btn} 
-          labelStyle={ss.btnLabel} 
-          onPress={() => navigation.navigate("CHR", { TeacherID })}
-        >
-          View CHR
-        </Button>
+      <Text style={ss.dashboardTitle}>FACULTY DASHBOARD</Text>
 
-        <Button 
-          mode="contained" 
-          style={ss.btn} 
-          labelStyle={ss.btnLabel} 
-          onPress={() => navigation.navigate("Attendance", { TeacherID })}
-        >
-          View Attendance
-        </Button>
+      {/* Action Cards */}
+      <DashboardItem 
+        label="COURSE HISTORY" 
+        title="View CHR" 
+        buttonText="View" 
+        onPress={() => navigation.navigate("CHR", { TeacherID })}
+      />
 
-        <Button 
-          mode="contained" 
-          style={ss.btn} 
-          labelStyle={ss.btnLabel} 
-          onPress={() => navigation.navigate("EvaluationRates", { TeacherID })}
-        >
-          View Evaluation
-        </Button>
+      <DashboardItem 
+        label="RECORDS" 
+        title="View Attendance" 
+        buttonText="Check" 
+        onPress={() => navigation.navigate("Attendance", { TeacherID })}
+      />
 
-        {/* <Button 
-          mode="contained" 
-          style={ss.btn} 
-          labelStyle={ss.btnLabel} 
-          onPress={() => navigation.navigate("CustomForm", { TeacherID })}
-        >
-          Custom Evaluation Form
-        </Button> */}
-      </View>
+      <DashboardItem 
+        label="PERFORMANCE" 
+        title="View Evaluation" 
+        buttonText="Rates" 
+        onPress={() => navigation.navigate("EvaluationRates", { TeacherID })}
+      />
 
-      <Button 
-        mode="contained" 
-        style={ss.lgbtn} 
-        labelStyle={ss.lgbtnLabel} 
-        onPress={logout}
-      >
-        ↗️ Logout
-      </Button>
+      {/* Logout Button */}
+      <TouchableOpacity style={ss.logoutBtn} onPress={logout}>
+        <Text style={ss.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
 
 const ss = StyleSheet.create({
-  mView: {
+  main: {
     flexGrow: 1,
-    backgroundColor: "rgb(15, 59, 53)",
+    backgroundColor: "#0d2e27", // Aapka specific dark green
+    alignItems: "center",
     padding: 20,
-    alignItems: "center",
   },
-  h: {
-    alignItems: "center",
-    marginTop: 40,
-    marginBottom: 20,
+  logoContainer: {
+    marginVertical: 30,
+    backgroundColor: '#fff',
+    borderRadius: 60,
+    padding: 10,
   },
-  bimg: {
-    width: 100,
-    height: 110,
-    resizeMode: "contain",
+  logo: {
+    width: 90,
+    height: 100,
+    resizeMode: 'contain',
   },
-  mtxt: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "rgb(15, 59, 53)",
-    marginBottom: 10,
-  },
-  vc: {
+  profileCard: {
+    backgroundColor: "#fff",
     width: "100%",
-    backgroundColor: "rgb(255, 255, 255)",
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 25,
+    padding: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 25,
+    marginBottom: 30,
   },
-  txt: {
+  profileInfo: {
+    flex: 1,
+  },
+  pText: {
     fontSize: 15,
-    marginBottom: 5,
-    color: "rgb(51, 51, 51)",
+    color: "#333",
+    marginTop: 2,
+  },
+  bold: {
+    fontWeight: "bold",
+  },
+  pSubText: {
+    color: "#28a745",
+    fontWeight: "600",
+    marginTop: 5,
+    fontSize: 12,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#eee',
   },
-  dt: {
-    color: "rgb(255, 255, 255)",
-    fontSize: 22,
+  dashboardTitle: {
+    color: "#28a745",
+    fontSize: 18,
     fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 20,
+  },
+  card: {
+    backgroundColor: "#fff",
+    width: "100%",
+    borderRadius: 20,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
   },
-  btng: {
-    width: "100%",
-    marginBottom: 30,
+  cardContent: {
+    flex: 1,
   },
-  btn: {
-    backgroundColor: "rgb(255, 255, 255)",
-    borderRadius: 25,
-    marginBottom: 12,
-    height: 50,
-    justifyContent: 'center',
+  itemLabel: {
+    fontSize: 11,
+    color: "#666",
+    fontWeight: "600",
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
-  btnLabel: {
-    color: "rgb(15, 59, 53)",
+  itemTitle: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#000",
   },
-  lgbtn: {
-    backgroundColor: "rgb(255, 255, 255)",
-    borderRadius: 25,
-    width: '60%',
-    marginBottom: 30,
+  actionBtn: {
+    backgroundColor: "#00c853",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
   },
-  lgbtnLabel: {
+  actionBtnText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  logoutBtn: {
+    backgroundColor: "#fff",
+    paddingVertical: 12,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  logoutText: {
+    color: "#000",
     fontSize: 16,
     fontWeight: "bold",
-    color: "rgb(0, 0, 0)",
   },
 });
 

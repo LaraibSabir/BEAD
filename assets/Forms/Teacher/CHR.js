@@ -26,15 +26,48 @@ const CHR = () => {
   // Manual date set to match your SQL records
   const [manualDate, setManualDate] = useState("2026-03-05");
 
-  useEffect(() => {
-    if (TeacherID) {
-      fetchInitialData();
-    } else {
-      setLoading(false);
-      Alert.alert("Error", "No Teacher ID received.");
-    }
-  }, [TeacherID]);
+  const avatarIDs = [
 
+    "BIIT167", "BIIT189", "BIIT212", "BIIT213", "BIIT346", "BIIT359", 
+
+    "BIIT365", "BIIT368", "BIIT222", "BIIT202", "BIIT386", "BIIT422", 
+
+    "BIIT394", "BIIT397", "BIIT395", "BIIT393", "BIIT400", "BIIT402", 
+
+    "BIIT403", "BIIT404", "BIIT407", "BIIT409", "BIIT411", "BIIT412", 
+
+    "BIIT416", "BIIT417", "BIIT418", "BIIT421", "BIIT424", "BIIT425", 
+
+    "BIIT427", "BIIT429"
+
+  ];
+
+
+
+  // Determine the image source based on TeacherID
+
+  const profileImage = avatarIDs.includes(TeacherID)
+
+    ? require("../../Images/avatar.png")
+
+    : require("../../Images/male.png");
+
+
+
+  useEffect(() => {
+
+    if (TeacherID) {
+
+     fetchInitialData();
+    } else {
+
+      setLoading(false);
+
+      Alert.alert("Error", "No Teacher ID found. Please login again.");
+
+    }
+
+  }, [TeacherID]);
   const fetchInitialData = async () => {
     try {
       setLoading(true);
@@ -100,7 +133,7 @@ const CHR = () => {
                 <Text style={ss.infoText}> {teacherData?.Designation || "N/A"}</Text>
               </Text>
             </View>
-            <Image source={require("../../Images/avatar.png")} style={ss.avatar} />
+            <Image source={profileImage} style={ss.avatar} />
           </View>
         </View>
 

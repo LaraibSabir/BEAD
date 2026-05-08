@@ -126,8 +126,6 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.ALLOCATE' does not h
           <Property Name="ELective_course" Type="int" />
           <Property Name="Old_SOS" Type="char" MaxLength="8" />
         </EntityType>
-        <!--Errors Found During Generation:
-warning 6002: The table/view 'Teacher_Evaluation_System.dbo.EMPMTR' does not have a primary key defined. The key has been inferred and the definition was created as a read-only table/view.-->
         <EntityType Name="EMPMTR">
           <Key>
             <PropertyRef Name="Emp_no" />
@@ -202,9 +200,11 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.Log_In' does not hav
           <Key>
             <PropertyRef Name="Question_ID" />
           </Key>
-          <Property Name="Question_ID" Type="int" Nullable="false" />
-          <Property Name="Question" Type="nvarchar(max)" />
+          <Property Name="Question_ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="Question" Type="nvarchar(max)" Nullable="false" />
           <Property Name="Description" Type="varchar" MaxLength="30" />
+          <Property Name="IsActive" Type="bit" />
+          <Property Name="Updated_Question" Type="nvarchar(max)" />
         </EntityType>
         <EntityType Name="SEMMTR">
           <Key>
@@ -427,6 +427,7 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
           <EntitySet Name="ClassReports" EntityType="Self.ClassReports" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Crsdtl" EntityType="Self.Crsdtl" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="CRSMTR" EntityType="Self.CRSMTR" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="EMPMTR" EntityType="Self.EMPMTR" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Eval" EntityType="Self.Eval" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="PeerEvaluation" EntityType="Self.PeerEvaluation" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Projects" EntityType="Self.Projects" Schema="dbo" store:Type="Tables" />
@@ -446,17 +447,6 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
     [ALLOCATE].[LEC3_DT] AS [LEC3_DT], 
     [ALLOCATE].[SemC] AS [SemC]
     FROM [dbo].[ALLOCATE] AS [ALLOCATE]</DefiningQuery>
-          </EntitySet>
-          <EntitySet Name="EMPMTR" EntityType="Self.EMPMTR" store:Type="Tables" store:Schema="dbo">
-            <DefiningQuery>SELECT 
-    [EMPMTR].[Emp_no] AS [Emp_no], 
-    [EMPMTR].[Emp_email] AS [Emp_email], 
-    [EMPMTR].[USERID] AS [USERID], 
-    [EMPMTR].[Password] AS [Password], 
-    [EMPMTR].[Designation] AS [Designation], 
-    [EMPMTR].[Name] AS [Name], 
-    [EMPMTR].[Eval] AS [Eval]
-    FROM [dbo].[EMPMTR] AS [EMPMTR]</DefiningQuery>
           </EntitySet>
           <EntitySet Name="Log_In" EntityType="Self.Log_In" store:Type="Tables" store:Schema="dbo">
             <DefiningQuery>SELECT 
@@ -570,7 +560,6 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
           <EntitySet Name="CRSMTRs" EntityType="Teacher_Evaluation_SystemModel.CRSMTR" />
           <EntitySet Name="Evals" EntityType="Teacher_Evaluation_SystemModel.Eval" />
           <EntitySet Name="Projects" EntityType="Teacher_Evaluation_SystemModel.Project" />
-          <EntitySet Name="Question_Answer" EntityType="Teacher_Evaluation_SystemModel.Question_Answer" />
           <EntitySet Name="SEMMTRs" EntityType="Teacher_Evaluation_SystemModel.SEMMTR" />
           <EntitySet Name="STMTRs" EntityType="Teacher_Evaluation_SystemModel.STMTR" />
           <EntitySet Name="ALLOCATEs" EntityType="Teacher_Evaluation_SystemModel.ALLOCATE" />
@@ -606,6 +595,7 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
             <End Role="Accgpa" EntitySet="Accgpas" />
           </AssociationSet>
           <EntitySet Name="PeerEvaluations" EntityType="Teacher_Evaluation_SystemModel.PeerEvaluation" />
+          <EntitySet Name="Question_Answer" EntityType="Teacher_Evaluation_SystemModel.Question_Answer" />
         </EntityContainer>
         <EntityType Name="AttendanceRecord">
           <Key>
@@ -717,14 +707,6 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
           <Property Name="project1" Type="String" MaxLength="200" FixedLength="false" Unicode="false" />
           <Property Name="technology" Type="String" MaxLength="100" FixedLength="false" Unicode="false" />
           <Property Name="course_no" Type="String" MaxLength="9" FixedLength="false" Unicode="false" />
-        </EntityType>
-        <EntityType Name="Question_Answer">
-          <Key>
-            <PropertyRef Name="Question_ID" />
-          </Key>
-          <Property Name="Question_ID" Type="Int32" Nullable="false" />
-          <Property Name="Question" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
-          <Property Name="Description" Type="String" MaxLength="30" FixedLength="false" Unicode="false" />
         </EntityType>
         <EntityType Name="SEMMTR">
           <Key>
@@ -1021,6 +1003,16 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
           <Property Name="Answer_Marks" Type="Int32" />
           <Property Name="Remarks" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
         </EntityType>
+        <EntityType Name="Question_Answer">
+          <Key>
+            <PropertyRef Name="Question_ID" />
+          </Key>
+          <Property Name="Question_ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Question" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="30" FixedLength="false" Unicode="false" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="Updated_Question" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
+        </EntityType>
         </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -1130,15 +1122,6 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
                 <ScalarProperty Name="class" ColumnName="class" />
                 <ScalarProperty Name="sname" ColumnName="sname" />
                 <ScalarProperty Name="reg_no" ColumnName="reg_no" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="Question_Answer">
-            <EntityTypeMapping TypeName="Teacher_Evaluation_SystemModel.Question_Answer">
-              <MappingFragment StoreEntitySet="Question_Answer">
-                <ScalarProperty Name="Description" ColumnName="Description" />
-                <ScalarProperty Name="Question" ColumnName="Question" />
-                <ScalarProperty Name="Question_ID" ColumnName="Question_ID" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
@@ -1338,6 +1321,17 @@ warning 6002: The table/view 'Teacher_Evaluation_System.dbo.v_TeacherAttendance_
                 <ScalarProperty Name="Target_Emp_no" ColumnName="Target_Emp_no" />
                 <ScalarProperty Name="Evaluator_Emp_no" ColumnName="Evaluator_Emp_no" />
                 <ScalarProperty Name="EvalID" ColumnName="EvalID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Question_Answer">
+            <EntityTypeMapping TypeName="Teacher_Evaluation_SystemModel.Question_Answer">
+              <MappingFragment StoreEntitySet="Question_Answer">
+                <ScalarProperty Name="Updated_Question" ColumnName="Updated_Question" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Question" ColumnName="Question" />
+                <ScalarProperty Name="Question_ID" ColumnName="Question_ID" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

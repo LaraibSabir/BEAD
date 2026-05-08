@@ -40,10 +40,11 @@ const StudentDashboard = () => {
       const profileResp = await fetch(profileUrl);
 
       if (profileResp.status === 200) {
-        const profileData = await profileResp.json();
-        setProfile(profileData);
+       const profileData = await profileResp.json();
+console.log("DEBUG - API Sex Value:", profileData.Sex); // Check this in your VS Code terminal
+setProfile(profileData);
 
-        // 2. Check Topper Status
+        // 2. Check Topper Status (CGPA >= 3.70)
         const confUrl = `${APIEndPoint}/Student/getConfidentialStudent?AridNo=${encodeURIComponent(formattedArid)}`;
         const confResp = await fetch(confUrl);
         
@@ -51,15 +52,23 @@ const StudentDashboard = () => {
           const confData = await confResp.json();
           if (confData.CGPA >= 3.7) {
             setIsTopper(true);
-            const checkConfUrl = `${APIEndPoint}/Student/CheckIfAlreadyEvaluatedCon?AridNo=${formattedArid}`;
-            const resConf = await fetch(checkConfUrl);
-            const confStatus = await resConf.json();
-            setIsConfDone(confStatus === true);
+            // Check if confidential eval already done (uses conEvals table in backend)
+            try {
+              const checkConfUrl = `${APIEndPoint}/Student/CheckIfAlreadyEvaluatedCon?AridNo=${formattedArid}&CourseCode=CONF`;
+              const resConf = await fetch(checkConfUrl);
+              if (resConf.ok) {
+                const confStatus = await resConf.json();
+                setIsConfDone(confStatus === true);
+              }
+            } catch (e) {
+              // If check fails, default to allowing submission
+              setIsConfDone(false);
+            }
           }
         }
 
         // 3. Fetch Courses & Check Evaluation Status
-        const courseUrl = `${APIEndPoint}/Student/getStudentCourses?AridNo=${encodeURIComponent(formattedArid)}&semester=${profileData.Semester}&discipline=${encodeURIComponent(profileData.Course)}`;
+        const courseUrl = `${APIEndPoint}/Student/GetStudentCourses?AridNo=${encodeURIComponent(formattedArid)}&semester=${profileData.Semester}&discipline=${encodeURIComponent(profileData.Course)}`;
         const courseResp = await fetch(courseUrl);
 
         if (courseResp.ok) {
@@ -132,7 +141,14 @@ const StudentDashboard = () => {
                 <Text style={ss.txt}><Text style={ss.bold}>Arid#:</Text> {profile.AridNo}</Text>
                 <Text style={ss.txt}><Text style={ss.bold}>Section:</Text> {profile.Course} - {profile.Semester}{profile.Section} </Text>
               </View>
-              <Image style={ss.avatar} source={require("../../Images/avatar.png")} />
+          <Image 
+  style={ss.avatar} 
+  source={
+    profile?.Sex && profile.Sex.toString().trim().toUpperCase() === "M" 
+      ? require("../../Images/male.png") 
+      : require("../../Images/avatar.png")
+  } 
+/>
             </View>
           </View>
         )}

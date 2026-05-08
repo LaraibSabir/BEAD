@@ -149,7 +149,7 @@ namespace FYP2.Controllers
                 var courseTrim = req.CourseId?.Trim();
 
                 var queryData = (from ev in db.Evals
-                                     // Joining with STMTR to ensure we only get evaluations from students in the specific session
+                                 // Joining with STMTR to ensure we only get evaluations from students in the specific session
                                  join st in db.STMTRs on ev.Reg_No equals st.Reg_No
                                  where req.TeacherIds.Contains(ev.Emp_no) &&
                                        ev.Course_no == courseTrim &&
@@ -213,7 +213,43 @@ namespace FYP2.Controllers
                 );
             }
         }
+        [HttpGet]
+        public HttpResponseMessage GetPeerAverageRatings(string session)
+        {
+            try
+            {
+                // Extract year (e.g., "2022")
+                var year = session?.Substring(0, 4);
 
+                // PeerEvaluation table mein Answer_Marks aur Target_Emp_no hain
+                var peerRatings = db.PeerEvaluations
+                    .Where(pe => pe.Answer_Marks != null)
+                    // Note: Agar PeerEvaluation mein session ka column nahi hai, 
+                    // to year filter hatana hoga ya join lagana hoga.
+                    .GroupBy(pe => pe.Target_Emp_no) // Grouping by Evaluated Teacher
+                    .Select(g => new
+                    {
+                        TeacherID = g.Key,
+                        AverageRating = g.Average(x => (double?)x.Answer_Marks) ?? 0
+                    })
+                    .ToList();
+
+                var result = peerRatings.Select(r => new
+                {
+                    r.TeacherID,
+                    AverageRating = Math.Round(r.AverageRating, 1)
+                }).ToList();
+
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    ex.InnerException?.Message ?? ex.Message
+                );
+            }
+        }
 
         public class GraphRequest
         {
@@ -537,7 +573,192 @@ namespace FYP2.Controllers
                 default: return "N/A";
             }
         }
+        // 1. Get Questions (Already updated to handle NULL IsActive)
+        [HttpGet]
+        [Route("api/Director/GetActiveQuestions")]
+        public HttpResponseMessage GetActiveQuestions()
+        {
+            try
+            {
+                var questions = db.Question_Answer
+                    .Where(q => q.IsActive == true || q.IsActive == null)
+                    .Select(q => new
+                    {
+                        Question_ID = q.Question_ID,
+                        Question = q.Question,
+                        Type = q.Description
+                    }).ToList();
+
+                return Request.CreateResponse(HttpStatusCode.OK, questions);
+            }
+            catch (Exception ex) { return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message); }
+        }
+
+        // 2. Add Question Only (No Modify/Remove)
+        [HttpPost]
+        [Route("api/Director/AddQuestion")]
+        public IHttpActionResult AddQuestion([FromBody] Question_Answer model)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(model.Question)) return BadRequest("Question text is required.");
+
+                // We create a NEW object to ensure we don't accidentally pass an ID 0 to the DB
+                // Inside AddQuestion method
+                var newEntry = new Question_Answer
+                {
+                    // Ensure Question_ID is NOT being set here
+                    Question = model.Question,
+                    Description = string.IsNullOrEmpty(model.Description) ? "T" : model.Description.ToUpper(),
+                    IsActive = true
+                };
+
+                db.Question_Answer.Add(newEntry);
+                db.SaveChanges();// This triggers SQL to generate the next ID (1, 2, 3...)
+                return Ok("Question Added Successfully");
+            }
+            catch (Exception ex) { return InternalServerError(ex); }
+        }
+
+        // 1. Remove Question (Soft Delete)
+        [HttpDelete]
+        [Route("api/Director/RemoveQuestion/{id}")]
+        public IHttpActionResult RemoveQuestion(int id)
+        {
+            try
+            {
+                var question = db.Question_Answer.Find(id);
+                if (question == null) return NotFound();
+
+                // Instead of deleting, we set IsActive to false
+                question.IsActive = false;
+                db.SaveChanges();
+                return Ok("Question removed successfully.");
+            }
+            catch (Exception ex) { return InternalServerError(ex); }
+        }
+
+        [HttpPost]
+        [Route("api/Director/ModifyQuestion")]
+        public IHttpActionResult ModifyQuestion([FromBody] Question_Answer model)
+        {
+            try
+            {
+                // 1. Find the SPECIFIC row using the ID sent from Postman (e.g., 81)
+                var existingQuestion = db.Question_Answer.Find(model.Question_ID);
+
+                if (existingQuestion == null)
+                {
+                    return NotFound();
+                }
+
+                // 2. Update the 'Updated_Question' column on THIS row
+                // This puts the new text right in front of the same ID
+                existingQuestion.Updated_Question = model.Question;
+
+                // Ensure the row stays active
+                existingQuestion.IsActive = true;
+
+                // 3. Save Changes
+                // EF will run an UPDATE statement instead of creating a new ID
+                db.SaveChanges();
+
+                return Ok("Updated ID " + model.Question_ID + " successfully in the same row.");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        // URL: /api/Director/GetGenderFeedbackStats?session=2022FM&courseId=CS101&teacherId=BIIT184
+        [HttpGet]
+        [Route("api/Director/GetGenderFeedbackStats")]
+        public HttpResponseMessage GetGenderFeedbackStats(string session, string courseId = null, string teacherId = null)
+        {
+            try
+            {
+                // Clean input parameters
+                var sessionTrim = session?.Trim();
+                var courseTrim = courseId?.Trim();
+                var teacherTrim = teacherId?.Trim();
+
+                if (string.IsNullOrEmpty(sessionTrim) || sessionTrim == "placeholder")
+                {
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "Valid session is required.");
+                }
+
+                // 1. Filter evaluations by joining Evals with Student Master (STMTRs) for Gender
+                var query = from ev in db.Evals
+                            join st in db.STMTRs on ev.Reg_No.Trim() equals st.Reg_No.Trim()
+                            where st.SOS.Trim() == sessionTrim
+                            select new
+                            {
+                                ev.Answer_Marks,
+                                // Normalize Gender to Upper Case and Trim for comparison
+                                Sex = st.Sex.Trim().ToUpper(),
+                                ev.Course_no,
+                                ev.Emp_no
+                            };
+
+                // 2. Apply Optional Filters
+                if (!string.IsNullOrEmpty(courseTrim))
+                {
+                    query = query.Where(x => x.Course_no.Trim() == courseTrim);
+                }
+
+                if (!string.IsNullOrEmpty(teacherTrim))
+                {
+                    query = query.Where(x => x.Emp_no.Trim() == teacherTrim);
+                }
+
+                var data = query.ToList();
+
+                // If no evaluations found, return 0% instead of erroring
+                if (!data.Any())
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, new
+                    {
+                        female = "0%",
+                        male = "0%",
+                        overall = "0%"
+                    });
+                }
+
+                // 3. Calculation Logic 
+                // We use (Average / 5) * 100 assuming Answer_Marks are 1-5
+
+                // Use DefaultIfEmpty(0) to prevent errors on empty gender groups
+                double femaleAvg = data.Where(x => x.Sex == "F")
+                                       .Select(x => (double)x.Answer_Marks)
+                                       .DefaultIfEmpty(0)
+                                       .Average();
+
+                double maleAvg = data.Where(x => x.Sex == "M")
+                                     .Select(x => (double)x.Answer_Marks)
+                                     .DefaultIfEmpty(0)
+                                     .Average();
+
+                double overallAvg = data.Select(x => (double)x.Answer_Marks)
+                                        .Average();
+
+                // 4. Format Results
+                var result = new
+                {
+                    female = Math.Round((femaleAvg / 5) * 100, 1) + "%",
+                    male = Math.Round((maleAvg / 5) * 100, 1) + "%",
+                    overall = Math.Round((overallAvg / 5) * 100, 1) + "%"
+                };
+
+                return Request.CreateResponse(HttpStatusCode.OK, result);
+            }
+            catch (Exception ex)
+            {
+                // Log the error (ex.Message) here if needed
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Database Error: " + ex.Message);
+            }
+        }
     }
+    
 
     public class GraphRequest
     {

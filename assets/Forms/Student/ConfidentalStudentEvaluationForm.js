@@ -115,11 +115,16 @@ const ConfidentalStudentEvaluationForm = () => {
               <Text style={ss.txt}><Text style={ss.bold}>Name:</Text> {profile.FullName}</Text>
               <Text style={ss.txt}><Text style={ss.bold}>Arid#:</Text> {profile.AridNo}</Text>
               <Text style={ss.txt}><Text style={ss.bold}>Section:</Text>{profile.Course}-{profile.Semester}{profile.Section} </Text>
-              <Text style={ss.semesterHighlight}>
-                
-              </Text>
+             
             </View>
-            <Image style={ss.avatar} source={require("../../Images/avatar.png")} />
+            <Image 
+  style={ss.avatar} 
+  source={
+    profile?.Sex && profile.Sex.toString().trim().toUpperCase() === "M" 
+      ? require("../../Images/male.png") 
+      : require("../../Images/avatar.png")
+  } 
+/>
           </View>
         </View>
       )}
@@ -144,15 +149,14 @@ const ConfidentalStudentEvaluationForm = () => {
                 course.isDone && ss.statusBtnDisabled
               ]}
               onPress={() => {
-                nav.navigate("ConfidentailQuestionsDashboard", { 
-                  courseNo: course.CourseNo,
-                  AridNo: formattedArid,
-                  Name: course.TeacherName,
-                  Course_desc: course.CourseName,
-                  teacherId: course.Emp_no,
-                  Qtype: "Confidential Evaluation" 
-                });
-              }}
+  nav.navigate("ConfidentailQuestionsDashboard", { 
+    courseNo: course.CourseNo,
+    AridNo: formattedArid,
+    Name: course.TeacherName,
+    Course_desc: course.CourseName,
+    teacherId: course.EmpNo, // Make sure this is EmpNo from your API
+  });
+}}
             >
               <Text style={[ss.statusTxt, course.isDone && ss.statusTxtDisabled]}>
                 {course.isDone ? "✓ Done" : "Evaluate"}

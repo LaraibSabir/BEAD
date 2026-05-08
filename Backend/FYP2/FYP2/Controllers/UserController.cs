@@ -48,24 +48,37 @@ namespace FYP2.Controllers
             {
                 if (string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(pass))
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Userid and password are required");
+                    return Request.CreateErrorResponse(
+                        HttpStatusCode.BadRequest,
+                        "Userid and password are required"
+                    );
                 }
 
-                var res = db.Log_In.FirstOrDefault(u => u.User_id.Trim() == user.Trim() && u.User_password.Trim() == pass.Trim());
+                var res = db.Log_In
+                            .FirstOrDefault(u =>
+                                u.User_id.Trim() == user.Trim() &&
+                                u.User_password.Trim() == pass.Trim()
+                            );
 
-                if (res== null)
+                if (res == null)
                 {
-                    return Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Invalid userid or password");
+                    return Request.CreateErrorResponse(
+                        HttpStatusCode.Unauthorized,
+                        "Invalid userid or password"
+                    );
                 }
 
                 int sem = 0;
-                string designation = ""; // New variable
+                string designation = "";
+                int eval = 0;
+
+                // ================= STUDENT =================
                 if (res.User_type.Trim().Equals("student", StringComparison.OrdinalIgnoreCase))
                 {
-                    string session = db.STMTRs
-                                       .Where(s => s.Reg_No.Trim() == res.User_id.Trim())
-                                       .Select(s => s.Semester_no)
-                                       .FirstOrDefault();
+                    var session = db.STMTRs
+                                    .Where(s => s.Reg_No.Trim() == res.User_id.Trim())
+                                    .Select(s => s.Semester_no)
+                                    .FirstOrDefault();
 
                     if (!string.IsNullOrEmpty(session) && session.Length >= 4)
                     {
@@ -73,43 +86,56 @@ namespace FYP2.Controllers
                         int currentYear = DateTime.Now.Year;
                         int currentMonth = DateTime.Now.Month;
 
-                        // Actual calculation
                         int calculatedSem = (currentYear - eyear) * 2;
-                        if (currentMonth >= 9)
-                        {
-                            calculatedSem += 1;
-                        }
 
-                        // Aapki requirement: 2 semesters kam dikhaye
+                        if (currentMonth >= 9)
+                            calculatedSem += 1;
+
                         sem = calculatedSem - 2;
 
-                        // Safety check: semester 0 ya negative na ho jaye
-                        if (sem < 1) sem = 1;
+                        if (sem < 1)
+                            sem = 1;
                     }
                 }
+
+                // ================= TEACHER =================
                 else if (res.User_type.Trim().Equals("teacher", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Fetch designation for teachers
-                    designation = db.EMPMTRs
-                                    .Where(e => e.Emp_no.Trim() == res.User_id.Trim())
-                                    .Select(e => e.Designation)
-                                    .FirstOrDefault() ?? "";
+                    var emp = db.EMPMTRs
+                                .FirstOrDefault(e => e.Emp_no.Trim() == res.User_id.Trim());
+
+                    if (emp != null)
+                    {
+                        designation = emp.Designation ?? "";
+                        eval = emp.Eval ?? 0;
+                    }
+                    else
+                    {
+                        // IMPORTANT: keep response consistent even if EMP not found
+                        designation = "";
+                        eval = 0;
+                    }
                 }
+
+                // ================= RESPONSE =================
                 return Request.CreateResponse(HttpStatusCode.OK, new
                 {
                     message = "Login successful",
                     userid = res.User_id.Trim(),
                     userType = res.User_type.Trim(),
                     semester = sem,
-                    designation = designation.Trim() // Send this to frontend
-            });
+                    designation = designation,
+                    eval = eval
+                });
             }
             catch (Exception ex)
             {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, "Error: " + ex.Message);
+                return Request.CreateErrorResponse(
+                    HttpStatusCode.InternalServerError,
+                    "Error: " + ex.Message
+                );
             }
         }
-
         [HttpPost]
         public HttpResponseMessage LogoutUser(string userid)
         {

@@ -1,4 +1,5 @@
-﻿using FYP2.Models;
+
+using FYP2.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -15,16 +16,11 @@ using static System.Collections.Specialized.BitVector32;
 namespace FYP2.Controllers
 {
     public class StudentController : ApiController
-
     {
-        Teacher_Evaluation_SystemEntities2 db = new Teacher_Evaluation_SystemEntities2();
-        testingEntities db2 = new testingEntities();
-        // Use a unique header to identify your encrypted files
-        private const string CipherHeader = "AES256_ENC_v1";
+        private const string FallbackAesKeyBase64 = "vrHFCSCrUlrMHNWFTYJgS09SfZFC+QY0PuMuOz0pyXY=";
+        private const string CipherHeader = "CYPHER:AES-256-CBC";
 
-        // This must be a 32-byte key encoded in Base64 for AES-256
-        // You can generate one using: Convert.ToBase64String(Guid.NewGuid().ToByteArray().Concat(Guid.NewGuid().ToByteArray()).ToArray())
-        private const string FallbackAesKeyBase64 = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=";
+        Teacher_Evaluation_SystemEntities2 db = new Teacher_Evaluation_SystemEntities2();
         [HttpGet]
 
         public HttpResponseMessage GetStudentProfile(string AridNo)
@@ -42,7 +38,8 @@ namespace FYP2.Controllers
                         s.St_lastname,
                         s.Section,
                         s.Final_course,
-                        s.Semester_no
+                        s.Semester_no,
+                        s.Sex
                     })
                     .FirstOrDefault();
 
@@ -79,71 +76,14 @@ namespace FYP2.Controllers
                     FullName = (res.St_firstname + " " + (res.St_middlename ?? "") + " " + res.St_lastname).Replace("  ", " ").Trim(),
                     Section = res.Section?.Trim(),
                     Course = res.Final_course?.Trim(),
-                    Semester = calculatedSem
+                    Semester = calculatedSem,
+                    Sex = res.Sex
                 });
             }
             catch (Exception ex)
             {
 
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.ToString());
-            }
-        }
-        [HttpGet]
-        public HttpResponseMessage getConfidentialStudent(string AridNo)
-        {
-            try
-            {
-                // Removed SEM_STATUS condition
-                var studentData = (from s in db.STMTRs
-                                   join a in db.Accgpas on s.Reg_No.Trim() equals a.REG_NO.Trim()
-                                   where s.Reg_No.Trim() == AridNo.Trim()
-                                   && a.CGPA >= 3.70m
-                                   select new
-                                   {
-                                       s.Reg_No,
-                                       Name = s.St_firstname + " " + s.St_lastname,
-                                       a.CGPA,
-                                       s.Section
-                                   }).FirstOrDefault();
-
-                if (studentData == null)
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Criteria not met.");
-                }
-
-                return Request.CreateResponse(HttpStatusCode.OK, studentData);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
-        [HttpGet]
-        public IHttpActionResult GetConQuestions()
-        {
-            try
-            {
-                // Fetching questions from conQuestion_Answer table
-                var questions = db2.conQuestion_Answer.Select(q => new
-                {
-                    QuestionID = q.Question_ID,
-                    QuestionText = q.Question,
-                    // Use string.Equals or a null check to prevent crashes
-                    Category = (q.Description ?? "").Trim() == "T" ? "Teacher Evaluation" :
-               (q.Description ?? "").Trim() == "E" ? "Ethics/Environment" : "General",
-                    RawType = q.Description // Use 'RawType' as used in the React Native code
-                }).ToList();
-
-                if (!questions.Any())
-                {
-                    return Content(HttpStatusCode.NotFound, "No evaluation questions found.");
-                }
-
-                return Ok(questions);
-            }
-            catch (Exception ex)
-            {
-                return InternalServerError(ex);
             }
         }
         [HttpGet]
@@ -164,17 +104,16 @@ namespace FYP2.Controllers
                                              detail.DISCIPLINE.Trim() == discipline.Trim()
                                        select new
                                        {
+                                           EmpNo = detail.Emp_no.Trim(),
                                            CourseNo = detail.Course_no.Trim(),
                                            CourseName = course.Course_desc.Trim(),
-                                           TeacherName = teacher != null ? teacher.Name.Trim() : "Not Assigned",
-                                           // Ensure this matches the property name exactly
-                                           Emp_no = teacher != null ? teacher.Emp_no.Trim() : "N/A",
+                                           TeacherName = (teacher.Name.Trim()).Trim(),
                                            Section = detail.SECTION.Trim(),
                                            Semester = detail.CrsSemNo
                                        })
-                                       .ToList()
-                                       .GroupBy(x => x.CourseNo)
-                                       .Select(g => g.First())
+                                       .ToList() // Pehle list lein
+                                       .GroupBy(x => x.CourseNo) // Course Number ki base par group karein
+                                       .Select(g => g.First())   // Har group ka sirf pehla record uthayein
                                        .ToList();
 
                 return Request.CreateResponse(HttpStatusCode.OK, enrolledCourses);
@@ -213,8 +152,10 @@ namespace FYP2.Controllers
             }
         }
         [HttpPost]
+
         public IHttpActionResult SubmitEvaluation(EvaluationRequest request)
         {
+            // 1. Validation: Data missing na ho
             if (request == null || request.Answers == null || request.Answers.Count == 0)
             {
                 return BadRequest("Required data is missing.");
@@ -228,17 +169,15 @@ namespace FYP2.Controllers
                 {
                     var evaluation = new Eval
                     {
+                        // Trimming aur Null check taake validation fail na ho
                         Emp_no = request.Emp_no?.Trim(),
                         Reg_No = request.Reg_no?.Trim(),
                         Course_no = request.Course_no?.Trim(),
                         Discipline = request.Discipline?.Trim(),
                         Semester_no = currentSemester,
-                        // CRITICAL FIX: Ensure your Eval model property for Question_Desc 
-                        // is an 'int' to match the database
                         Question_Desc = ans.Question_ID,
                         Answer_Desc = GetRatingText(ans.Rating),
-                        Answer_Marks = ans.Rating,
-                        Suggestion = request.Suggestion
+                        Answer_Marks = ans.Rating
                     };
                     db.Evals.Add(evaluation);
                 }
@@ -247,16 +186,13 @@ namespace FYP2.Controllers
             }
             catch (System.Data.Entity.Validation.DbEntityValidationException dbEx)
             {
+                // Ye code aapko batayega ke kis column mein masla hai
                 var errorMessages = dbEx.EntityValidationErrors
                     .SelectMany(x => x.ValidationErrors)
                     .Select(x => x.PropertyName + ": " + x.ErrorMessage);
 
-                return InternalServerError(new Exception(string.Join("; ", errorMessages)));
-            }
-            catch (Exception ex)
-            {
-                // This will show the exact SQL error in your debug console
-                return InternalServerError(ex);
+                var fullErrorMessage = string.Join("; ", errorMessages);
+                return InternalServerError(new Exception("Validation Error: " + fullErrorMessage));
             }
         }
 
@@ -281,39 +217,36 @@ namespace FYP2.Controllers
                 default: return "N/A";
             }
         }
-        //[HttpPost]
-        //public IHttpActionResult SubmitConfidentialEvaluation(ConfidentialEvaluationRequest request)
-        //{
-        //    if (request == null || request.Answers == null) return BadRequest("Invalid data.");
+        [HttpGet]
+        public HttpResponseMessage getConfidentialStudent(string AridNo)
+        {
+            try
+            {
+                // Removed SEM_STATUS condition
+                var studentData = (from s in db.STMTRs
+                                   join a in db.Accgpas on s.Reg_No.Trim() equals a.REG_NO.Trim()
+                                   where s.Reg_No.Trim() == AridNo.Trim()
+                                   && a.CGPA >= 3.70m
+                                   select new
+                                   {
+                                       s.Reg_No,
+                                       Name = s.St_firstname + " " + s.St_lastname,
+                                       a.CGPA,
+                                       s.Section
+                                   }).FirstOrDefault();
 
-        //    try
-        //    {
-        //        string semester = GetAridSemester();
+                if (studentData == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.NotFound, "Criteria not met.");
+                }
 
-        //        foreach (var ans in request.Answers)
-        //        {
-        //            var entry = new conEval
-        //            {
-        //                Emp_no = request.Emp_no,
-        //                Reg_No = request.Reg_no,
-        //                Course_no = request.Course_no,
-        //                Discipline = request.Discipline,
-        //                Semester_no = semester,
-        //                St_Email = request.St_Email,
-        //                Question_Desc = ans.Question_ID,
-        //                Answer_Marks = ans.Rating,
-        //                Answer_YN = ans.Answer_YN,
-        //                Suggestion = request.Suggestion,
-        //                Answer_Desc = ans.Answer_YN.HasValue ? (ans.Answer_YN.Value ? "Yes" : "No") : GetRatingText(ans.Rating)
-        //            };
-        //            db2.conEvals.Add(entry); // Adding to db2
-        //        }
-
-        //        db2.SaveChanges(); // FIX: Must call SaveChanges on db2, not db
-        //        return Ok(new { message = "Success" });
-        //    }
-        //    catch (Exception ex) { return InternalServerError(ex); }
-        //}
+                return Request.CreateResponse(HttpStatusCode.OK, studentData);
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
+            }
+        }
         [HttpGet]
 
         public IHttpActionResult GetSupervisorName(string AridNo)
@@ -338,42 +271,6 @@ namespace FYP2.Controllers
             }
         }
 
-    
-    [HttpGet]
-        public HttpResponseMessage GetCourseTeachers(string courseNo, string AridNo)
-        {
-            try
-            {
-                using (var db = new Teacher_Evaluation_SystemEntities2())
-                {
-                    // We start from Crsdtl because it contains both Reg_no and Course_no
-                    var teacherList = (from detail in db.Crsdtls
-                                       join teacher in db.EMPMTRs on detail.Emp_no equals teacher.Emp_no
-                                       join course in db.CRSMTRs on detail.Course_no equals course.Course_no
-                                       where detail.REG_NO == AridNo.Trim()
-                                       && detail.Course_no == courseNo.Trim()
-                                       select new
-                                       {
-                                           CourseNo = detail.Course_no,
-                                           CourseName = course.Course_desc, // Note: CRSMR has 'Course_desc'
-                                           TeacherId = detail.Emp_no,
-                                           TeacherName = teacher.Name,
-                                           Designation = teacher.Designation
-                                       })
-                                       .Distinct()
-                                       .ToList();
-
-                    if (!teacherList.Any())
-                        return Request.CreateResponse(HttpStatusCode.NotFound, "No teachers found for this student and course.");
-
-                    return Request.CreateResponse(HttpStatusCode.OK, teacherList);
-                }
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
         //Check if Already Evaluated
         [HttpGet]
         public HttpResponseMessage CheckIfAlreadyEvaluated(string AridNo, string CourseCode)
@@ -393,24 +290,7 @@ namespace FYP2.Controllers
             }
         }
 
-        //For Confidentail check already evaluated or not
-        [HttpGet]
-        public HttpResponseMessage CheckIfAlreadyEvaluatedCon(string AridNo, string CourseCode)
-        {
-            try
-            {
-                var res = db2.conEvals.Where(e => e.Reg_No == AridNo && e.Course_no == CourseCode).FirstOrDefault();
-                if (res != null)
-                {
-                    return Request.CreateResponse(HttpStatusCode.OK, true);
-                }
-                return Request.CreateResponse(HttpStatusCode.OK, false);
-            }
-            catch (Exception ex)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex.Message);
-            }
-        }
+
         [HttpPost]
         [Route("api/student/submit-confidential")]
         public IHttpActionResult SubmitConfidential([FromBody] EvaluationRequest request)
@@ -596,45 +476,21 @@ namespace FYP2.Controllers
                 }
             }
         }
-    
-
-    // --- Data Transfer Objects (DTOs) ---
-    public class EvaluationRequest
-    {
-        public string Emp_no { get; set; }
-        public string Reg_no { get; set; }
-        public string Course_no { get; set; }
-        public string Discipline { get; set; }
-
-        public string Suggestion { get; set; } // <--- ADD THIS LINE
-        public List<AnswerDetail> Answers { get; set; }
     }
-    public class AnswerDetail
+
+}
+// --- Data Transfer Objects (DTOs) ---
+public class EvaluationRequest
+{
+    public string Emp_no { get; set; }
+    public string Reg_no { get; set; }
+    public string Course_no { get; set; }
+    public string Discipline { get; set; }
+    public List<AnswerDetail> Answers { get; set; }
+}
+
+public class AnswerDetail
 {
     public int Question_ID { get; set; }
     public int Rating { get; set; }
 }
-
-
-        public class ConfidentialEvaluationRequest
-        {
-            public string Emp_no { get; set; }
-            public string Reg_no { get; set; }
-            public string Course_no { get; set; }
-            public string Discipline { get; set; }
-            public string St_Email { get; set; }
-            public string Suggestion { get; set; }
-            public List<ConfidentialAnswer> Answers { get; set; }
-        }
-
-        public class ConfidentialAnswer
-        {
-            public int Question_ID { get; set; }
-            public int Rating { get; set; }
-            public bool? Answer_YN { get; set; } // BIT in SQL
-        }
-    }
-}
-
-    
-

@@ -60,16 +60,20 @@ const DirectorDashboard = ({ navigation }) => {
         onPress={() => navigation.navigate('RCEvaluation')}
       />
       
-      <DashboardItem 
-        label="EVALUATION SETUP" 
-        title="Manage Questions" 
-        buttonText="Manage" 
-      />
-
+<DashboardItem 
+  label="EVALUATION SETUP" 
+  title="Manage Questions" 
+  buttonText="Manage" 
+  // FIX: Navigate directly to the sibling screen name
+  onPress={() => navigation.navigate('AddStudentEvalQuestions')} 
+/>
       <DashboardItem 
         label="PARTICIPATION RATIO" 
         title="Gender Analytics" 
         buttonText="Analytics" 
+        onPress={() =>navigation.navigate('GenderAnalytics')}
+
+
       />
 
       <DashboardItem 

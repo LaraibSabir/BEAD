@@ -1,5 +1,6 @@
 
 
+
 ALTER TABLE ClassReports
 ALTER COLUMN Emp_no CHAR(7) NOT NULL;
 
@@ -32,19 +33,22 @@ FROM EMPMTR
 WHERE Emp_no NOT IN (SELECT User_id FROM Log_In);
 
 
-SELECT * from Log_In where User_id='BIIT156'
+SELECT * from Log_In where User_id='2022-ARID-4044'
 SELECT * FROM Crsdtl where REG_NO='2025-ARID-0273';
 select * from Eval  where Reg_No='2022-ARID-4044'
 select * from CRSMTR where Course_no='MTH-435';
-select * from EMPMTR where USERID='Muhammad Ihsan'
+select * from EMPMTR where USERID='Dr. Mohammad jamil sawar'
 SELECT * from Log_In where User_id='2023-ARID-4059';
 select * from Question_Answer
-select * from STMTR  where Reg_No='1998-ARID-0437'
+select * from STMTR  where Reg_No='2021-ARID-0190'
 select * from Accgpa where Reg_No='1998-ARID-0437';
 select * from STMTR where SOS='SOS2020S'
 select * from ALLOCATE 
 order by EMP_NO asc;
 select * from AttendanceRecords;
+
+-- 2. Add 'IsActive' column to support soft deletes/versioning
+
 
 
 CREATE TABLE PeerEvaluation (
@@ -62,10 +66,31 @@ select AVG(Answer_Marks) from Eval where  Reg_No='2022-ARID-4044' and Emp_no='BI
 
 
 select * from ClassReports where Emp_no='BIIT187'
-
-
+ALTER TABLE Question_Answer 
+ADD Updated_Question NVARCHAR(MAX) NULL;
+ALTER TABLE Question_Answer 
+ADD IsActive BIT DEFAULT 1;
 SELECT TOP 10 * FROM STMTR
 SELECT TOP 10 * FROM Eval
 
 
+SELECT * FROM Question_Answer WHERE Question_ID = 81;
+SELECT 
+    Question_ID,
+    ISNULL(Updated_Question, Question) AS DisplayQuestion
+FROM Question_Answer
+WHERE IsActive = 1;
+
+select * from Log_In 
  
+insert into Log_In   (USER_NAME,USER_ID,User_type,User_password)  values  ('Abdul Qadeer','2022-ARID-0052','Student','123')
+SELECT * 
+FROM STMTR 
+WHERE Reg_No LIKE '2022-ARID-%';
+
+
+
+UPDATE EMPMTR
+SET Designation = 'Director'
+WHERE Emp_no = 'BIIT156';
+

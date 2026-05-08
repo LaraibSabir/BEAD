@@ -142,7 +142,14 @@ const filtered = qData.filter(q => q.RawType === targetType);
                         <Text style={ss.txt}><Text style={ss.bold}>Arid#:</Text> {profile.AridNo}</Text>
                         <Text style={ss.txt}><Text style={ss.bold}>Section:</Text> {profile.Course}-{profile.Section}{profile.Semester}</Text>
                     </View>
-                    <Image style={ss.avatar} source={require("../../Images/avatar.png")} />
+                     <Image 
+  style={ss.avatar} 
+  source={
+    profile?.Sex && profile.Sex.toString().trim().toUpperCase() === "M" 
+      ? require("../../Images/male.png") 
+      : require("../../Images/avatar.png")
+  } 
+/>
                 </View>
             </View>
         )}
