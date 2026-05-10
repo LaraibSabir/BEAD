@@ -39,9 +39,13 @@ import ConfidentialDecryptor from "./assets/Forms/Director/ConfidentialDecryptor
 import ConfidentialDecryptorTable from "./assets/Forms/Director/ConfidentialDecryptorTable";
 import CompareScreenFrom_C_T from "./assets/Forms/Director/TeacherPerfomance/CompareScreenFrom_C_T";
 import AddStudentEvalQuestions from "./assets/Forms/Director/Questions/AddStudentEvalQuestions";
-
 import GenderAnalytics from "./assets/Forms/Director/GenderAnalytics";
 
+
+//Admin
+import AdminDashboard from "./assets/Forms/Admin/AdminDashboard";
+import UploadAttendance from "./assets/Forms/Admin/UploadAttendance";
+import UploadCHR from "./assets/Forms/Admin/UploadCHR";
 // Declare navigators BEFORE using them
 const MainStack = createNativeStackNavigator();
 const DirectorSubStack = createNativeStackNavigator();
@@ -88,6 +92,13 @@ const Root = () => {
 
         {/* Director (nested sub-stack) */}
         <MainStack.Screen name="DirectorStack" component={DirectorStack} />
+
+        {/* Admin */}
+        <MainStack.Screen name="AdminDashboard" component={AdminDashboard} />
+        <MainStack.Screen name="UploadAttendance" component={UploadAttendance} />
+        <MainStack.Screen name="UploadCHR" component={UploadCHR} />
+        
+
       </MainStack.Navigator>
     </NavigationContainer>
   );

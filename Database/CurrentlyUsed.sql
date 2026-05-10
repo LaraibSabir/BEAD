@@ -36,17 +36,21 @@ WHERE Emp_no NOT IN (SELECT User_id FROM Log_In);
 SELECT * from Log_In where User_id='2022-ARID-4044'
 SELECT * FROM Crsdtl where REG_NO='2025-ARID-0273';
 select * from Eval  where Reg_No='2022-ARID-4044'
-select * from CRSMTR where Course_no='MTH-435';
-select * from EMPMTR where USERID='Dr. Mohammad jamil sawar'
-SELECT * from Log_In where User_id='2023-ARID-4059';
+select * from CRSMTR where Course_no='';
+select * from EMPMTR where USERID='Beenish';
+SELECT * from Log_In where User_id='BIIT400';
 select * from Question_Answer
-select * from STMTR  where Reg_No='2021-ARID-0190'
-select * from Accgpa where Reg_No='1998-ARID-0437';
+select * from STMTR  where Reg_No='2021-ARID-0168'
+select * from STMTR  where Reg_No='2020-ARID-3594'
+select distinct(SOS) from CRSMTR
+select * from Accgpa where Reg_No='2020-ARID-3594';
+
+select * from STMTR  where St_firstname='Ahmed'
 select * from STMTR where SOS='SOS2020S'
-select * from ALLOCATE 
+select * from ALLOCATE where EMP_NO='BIIT101'
 order by EMP_NO asc;
 select * from AttendanceRecords;
-
+select * from ClassReports;
 -- 2. Add 'IsActive' column to support soft deletes/versioning
 
 
@@ -83,14 +87,20 @@ WHERE IsActive = 1;
 
 select * from Log_In 
  
-insert into Log_In   (USER_NAME,USER_ID,User_type,User_password)  values  ('Abdul Qadeer','2022-ARID-0052','Student','123')
+insert into Log_In   (USER_NAME,USER_ID,User_type,User_password)  values  ('Muhammad Nadeem','BIIT000','Admin','123')
 SELECT * 
 FROM STMTR 
 WHERE Reg_No LIKE '2022-ARID-%';
 
 
+UPDATE Log_In
+SET User_type = 'Teacher'
+WHERE User_id = 'BIIT000';
+
 
 UPDATE EMPMTR
 SET Designation = 'Director'
 WHERE Emp_no = 'BIIT156';
+
+insert into EMPMTR (Emp_no,Emp_email,USERID,Password,Designation,Name,Eval) values ('BIIT000','Nadeem@biit.edu.pk','Nadeem','123','Admin','Muhammad Nadeem',0)
 

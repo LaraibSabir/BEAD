@@ -65,7 +65,9 @@ const Login = () => {
     // ✅ NEW CONDITION ADDED HERE
     nav.replace("PeerEvalutors", { TeacherID: user });
   }
-
+  else if(d.designation=== "Admin"){
+    nav.replace("AdminDashboard", { TeacherID: user });
+  }
   else if (d.designation === "Lecturer") {
     nav.replace("NotPeerEvaluators", { TeacherID: user });
   }
